@@ -1,0 +1,5 @@
+provides: SML-JSON 0.0.2
+remote: git@github.com:standardml/SML-JSON.git
+description: A rudimentary callback-based JSON parser
+maintainer: Gian Perrone <gdpe at itu dot dk>
+keywords: JSON, parsing
