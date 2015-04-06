@@ -51,30 +51,30 @@ struct
                do (inputData := String.extract (!inputData, 1, NONE))
 
    fun peek () = String.sub (!inputData,0)
-   fun take () = 
-      String.sub (!inputData,0) before 
+   fun take () =
+      String.sub (!inputData,0) before
          inputData := String.extract (!inputData, 1, NONE)
 
    fun matches s = (ws(); String.isPrefix s (!inputData))
    fun consume s =
-      if matches s then 
+      if matches s then
          (inputData := String.extract (!inputData, size s, NONE);
           inputPosition := !inputPosition + size s)
-                   else 
+                   else
          raise JSONParseError ("Expected '"^s^"'", !inputPosition)
 
    fun parseObject () =
-      if not (matches "{") then 
+      if not (matches "{") then
          raise JSONParseError ("Expected '{'", !inputPosition)
-      else 
+      else
          (consume "{"; ws ();
           if matches "}" then Callbacks.json_object [] before consume "}"
-          else 
-            (Callbacks.json_object (parseMembers ()) 
+          else
+            (Callbacks.json_object (parseMembers ())
                before (ws (); consume "}")))
 
    and parseMembers () =
-      parsePair () :: 
+      parsePair () ::
          (if matches "," then (consume ","; parseMembers ()) else [])
 
    and parsePair () =
@@ -82,12 +82,12 @@ struct
          (ws(); consume ":"; parseValue ()))
 
    and parseArray () =
-      if not (matches "[") then 
+      if not (matches "[") then
          raise JSONParseError ("Expected '['", !inputPosition)
-      else 
+      else
         (consume "[";
          if matches "]" then
-            Callbacks.json_array [] before consume "]" 
+            Callbacks.json_array [] before consume "]"
          else
             Callbacks.json_array (parseElements ()) before (ws (); consume "]"))
 
@@ -99,8 +99,11 @@ struct
       Callbacks.json_value (
          if matches "\"" then Callbacks.json_string (parseString ()) else
          if matches "-" orelse isDigit () then parseNumber () else
-         if matches "true" then Callbacks.json_bool true else
-         if matches "false" then Callbacks.json_bool false else
+         if matches "true" then
+             (consume "true"; Callbacks.json_bool true)
+         else if matches "false" then
+             (consume "false"; Callbacks.json_bool false)
+         else
          if matches "null" then Callbacks.json_null () else
          if matches "[" then parseArray () else
          if matches "{" then parseObject () else
@@ -111,7 +114,7 @@ struct
          consume ("\"") ;
          parseChars () before consume "\"")
 
-   and parseChars () = 
+   and parseChars () =
    let
       fun pickChars s =
          if peek () = #"\"" (* " *) then s else
@@ -124,7 +127,7 @@ struct
    let
       val i = parseInt ()
    in
-      if peek () = #"e" orelse peek () = #"E" then 
+      if peek () = #"e" orelse peek () = #"E" then
          Callbacks.json_int (valOf (Int.fromString (i^parseExp())))
       else if peek () = #"." then
          let
@@ -150,7 +153,7 @@ struct
       f ^ parseDigits ()
    end
 
-   and parseDigits () = 
+   and parseDigits () =
    let
       val r = ref ""
    in
@@ -165,10 +168,10 @@ struct
 
    and parseExp () =
    let
-      val _ = 
+      val _ =
          if peek () = #"e" orelse
             peek () = #"E" then take ()
-         else 
+         else
             raise JSONParseError ("Invalid number", !inputPosition)
 
       val f = if peek () = #"-" then (take (); "~")
@@ -178,10 +181,10 @@ struct
       "e" ^ f ^ parseDigits ()
    end
 
-   fun parse s = 
+   fun parse s =
       (inputData := s ;
        inputPosition := 0 ;
-       parseObject ()) handle JSONParseError (m,p) => 
+       parseObject ()) handle JSONParseError (m,p) =>
          Callbacks.error_handle (m,p,!inputData)
 end
 
@@ -190,7 +193,7 @@ struct
    type json_data = string
 
    fun json_object l =
-      "{\n   " ^ 
+      "{\n   " ^
       String.concatWith "\n   " l ^
       "}\n"
    fun json_pair (k,v) = k ^": "^v
@@ -205,5 +208,3 @@ struct
    fun error_handle (msg,pos,data) =
       raise Fail ("Error: " ^ msg ^ " near " ^ Int.toString pos)
 end
-
-
