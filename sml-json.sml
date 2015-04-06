@@ -33,7 +33,12 @@ sig
    val error_handle  : string * int * string -> json_data
 end
 
-functor JSONParser (Callbacks : JSON_CALLBACKS) =
+functor JSONParser (Callbacks : JSON_CALLBACKS) :
+        sig
+            type json_data;
+            val parse        : string -> json_data;
+        end
+=
 struct
    type json_data = Callbacks.json_data
 
